@@ -29,9 +29,7 @@ class Initializer(WaveAPIConfig):
 
         logger.debug(f"Height shape: {height.shape}, Direction shape: {direction.shape}")
 
-        wave = (
-            height
-            .merge(direction, on="time")
+        wave = (height.merge(direction, on="time")
         )[["time", "wave_height", "wave_dir"]]
         logger.debug(f"Merged wave shape: {wave.shape}")
         return wave
