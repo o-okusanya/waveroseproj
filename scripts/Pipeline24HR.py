@@ -2,11 +2,11 @@ import logging
 logger = logging.getLogger(__name__)
 from cfg.loggingconfig import setup_logging
 from datetime import datetime, timedelta, timezone
-from scripts.WindRosePlot import WindPlot
+from scripts.WaveRosePlot import WavePlot
 
 setup_logging()
 
-class Pipeline24HR(WindPlot):
+class Pipeline24HR(WavePlot):
     def run24hr(self):
         now = datetime.now(timezone.utc)
         self.ed = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -17,7 +17,7 @@ class Pipeline24HR(WindPlot):
         grouped = self.Bins(wind)
         fig = self.plot(
             grouped,
-            fname=f"wind_rose_24hr_{self.station}"
+            fname=f"wave_rose_24hr_{self.station}"
         )
         return fig
 

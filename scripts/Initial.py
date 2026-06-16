@@ -2,14 +2,14 @@ import numpy as np
 import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
-from cfg.apiconfig import WindAPIConfig
+from cfg.apiconfig import WaveAPIConfig
 
 dir_bins = np.arange(0, 361, 45)
 dir_labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-spd_bins = [0, 5, 10, 15, 30]
-spd_labels = ["0-5", "5-10", "10-15", "15-30"]
+hgt_bins = [0, 0.5, 1, 2, 4]
+hgt_labels = ["0-.5", ".5-1", "1-2", "2-4"]
 
-class Initializer(WindAPIConfig):
+class Initializer(WaveAPIConfig):
     def setupParameters(self, station, sd, ed):
         self.base = "https://mw.buoybay.noaa.gov/api/v1"
         self.key = "f159959c117f473477edbdf3245cc2a4831ac61f"
@@ -21,38 +21,38 @@ class Initializer(WindAPIConfig):
 
     def getData(self):
         logger.info(f"Fetching data for station {self.station}")
-        speed = self.fetch_var("wind_speed")
-        direction = self.fetch_var("wind_from_direction")
+        height = self.fetch_var("sea_surface_wave_significant_height")
+        direction = self.fetch_var("sea_surface_wave_from_direction")
 
-        speed = speed.rename(columns={"value": "wind_speed"})
-        direction = direction.rename(columns={"value": "wind_dir"})
+        height = height.rename(columns={"value": "wave_height"})
+        direction = direction.rename(columns={"value": "wave_dir"})
 
-        logger.debug(f"Speed shape: {speed.shape}, Direction shape: {direction.shape}")
+        logger.debug(f"Height shape: {height.shape}, Direction shape: {direction.shape}")
 
-        wind = pd.merge(
-            speed, direction,
-            on="time", suffixes=("", "_dir")
-        )[["time", "wind_speed", "wind_dir"]]
-        logger.debug(f"Merged wind shape: {wind.shape}")
-        return wind
+        wave = (
+            height
+            .merge(direction, on="time")
+        )[["time", "wave_height", "wave_dir"]]
+        logger.debug(f"Merged wave shape: {wave.shape}")
+        return wave
 
-    def Bins(self, wind):
-        wind["dir_bin"] = pd.cut(
-            wind["wind_dir"],
+    def Bins(self, wave):
+        wave["dir_bin"] = pd.cut(
+            wave["wave_dir"],
             bins=dir_bins,
             labels=dir_labels,
             include_lowest=True
         )
 
-        wind["spd_bin"] = pd.cut(
-            wind["wind_speed"],
-            bins=spd_bins,
-            labels=spd_labels,
+        wave["hgt_bin"] = pd.cut(
+            wave["wave_height"],
+            bins=hgt_bins,
+            labels=hgt_labels,
             include_lowest=True
         )
 
         grouped = (
-            wind.groupby(["dir_bin", "spd_bin"], observed=True)
+            wave.groupby(["dir_bin", "hgt_bin"], observed=True)
             .size()
             .reset_index(name="count")
         )

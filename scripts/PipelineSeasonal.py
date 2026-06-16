@@ -1,13 +1,13 @@
 import logging
 logger = logging.getLogger(__name__)
 from cfg.loggingconfig import setup_logging
-from scripts.WindRosePlot import WindPlot
+from scripts.WaveRosePlot import WavePlot
 from datetime import datetime, timedelta, timezone
 from cfg.seasonconfig import lastseason
 
 setup_logging()
 
-class PipelineSeasonal(WindPlot):
+class PipelineSeasonal(WavePlot):
     def runseason(self):
 
         season, year, sd, ed = lastseason()
@@ -18,7 +18,7 @@ class PipelineSeasonal(WindPlot):
         grouped = self.Bins(wind)
         self.plot(
             grouped,
-            fname=f"wind_rose_{season}_{year}_{self.station}"
+            fname=f"wave_rose_{season}_{year}_{self.station}"
         )
 
 if __name__ == "__main__":
