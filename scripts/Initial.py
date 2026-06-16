@@ -4,6 +4,11 @@ import logging
 logger = logging.getLogger(__name__)
 from cfg.apiconfig import WindAPIConfig
 
+dir_bins = np.arange(0, 361, 45)
+dir_labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+spd_bins = [0, 5, 10, 15, 30]
+spd_labels = ["0-5", "5-10", "10-15", "15-30"]
+
 class Initializer(WindAPIConfig):
     def setupParameters(self, station, sd, ed):
         self.base = "https://mw.buoybay.noaa.gov/api/v1"
@@ -25,25 +30,20 @@ class Initializer(WindAPIConfig):
         logger.debug(f"Speed shape: {speed.shape}, Direction shape: {direction.shape}")
 
         wind = pd.merge(
+            speed, direction,
             on="time", suffixes=("", "_dir")
         )[["time", "wind_speed", "wind_dir"]]
         logger.debug(f"Merged wind shape: {wind.shape}")
-        return wind, speed, direction
+        return wind
 
-    def Bins(self):
-        dir_bins = np.arange(0, 361, 45)
-        dir_labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-        spd_bins = [0, 5, 10, 15, 30]
-        spd_labels = ["0-5", "5-10", "10-15", "15-30"]
-
-        wind, speed, direction = self.getData()
-
+    def Bins(self, wind):
         wind["dir_bin"] = pd.cut(
             wind["wind_dir"],
             bins=dir_bins,
             labels=dir_labels,
             include_lowest=True
         )
+
         wind["spd_bin"] = pd.cut(
             wind["wind_speed"],
             bins=spd_bins,
@@ -57,7 +57,7 @@ class Initializer(WindAPIConfig):
             .reset_index(name="count")
         )
         logger.debug(f"Grouped shape: {grouped.shape}")
-        return grouped, speed, direction, wind["dir_bin"], wind["spd_bin"]
+        return grouped
 
 
 

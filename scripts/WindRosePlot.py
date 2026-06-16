@@ -1,34 +1,15 @@
-import os
 import logging
-
-log_dir = r"C:\Users\ncbof\hypoxia\windroseproj\logs"
-os.makedirs(log_dir, exist_ok=True)
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(r"C:\Users\ncbof\hypoxia\windroseproj\logs\windrose.log"),
-        logging.StreamHandler()
-    ]
-)
-
+import os
 logger = logging.getLogger(__name__)
 
 import plotly.express as px
-from scripts.Initial import Initializer
+from scripts.Initial import Initializer, spd_labels, dir_labels
 
 
 
 class WindPlot(Initializer):
-    def plot(self, fname):
+    def buildFig(self, grouped):
         logger.info(f"Starting plot for station {self.station}")
-        grouped, speed, direction, dir_bin, spd_bin = self.Bins()
-        dir_labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-        spd_labels = ["0-5", "5-10", "10-15", "15-30"]
-
-        output_dir = r"C:\Users\ncbof\hypoxia\windroseproj\dataOutput"
-        os.makedirs(output_dir, exist_ok=True)
 
         fig = px.bar_polar(
             grouped,
@@ -55,22 +36,16 @@ class WindPlot(Initializer):
             width=700,
             height=700,
         )
-
+        return fig
+    def save(self, fig, fname):
+        output_dir = r"C:\Users\ncbof\hypoxia\windroseproj\dataOutput"
+        os.makedirs(output_dir, exist_ok=True)
         fig.write_html(os.path.join(output_dir, f"{fname}.html"))
         fig.write_image(os.path.join(output_dir, f"{fname}.png"), scale=2)
+        fig.write_image(os.path.join(output_dir, f"{fname}.svg"), scale=2)
         fig.show()
 
-if __name__ == "__main__":
-    stations = [
-        ("AN", "2025-06-01T00:00:00z", "2025-06-08T00:00:00z", "wind_rose_AN"),
-        ("SR", "2025-06-01T00:00:00z", "2025-06-08T00:00:00z", "wind_rose_SR"),
-        ("PL", "2025-06-01T00:00:00z", "2025-06-08T00:00:00z", "wind_rose_PL"),
-    ]
-
-    for station, sd, ed, fname in stations:
-        wp = WindPlot()
-        wp.setupParameters(station, sd, ed)
-        try:
-            wp.plot(fname)
-        except Exception as e:
-            logger.error(f"Skipping {station}: {e}")
+    def plot(self, grouped, fname):
+        fig = self.buildFig(grouped)
+        self.save(fig, fname)
+        return fig
