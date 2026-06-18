@@ -17,11 +17,10 @@ class Pipeline24HR(WavePlot):
         wave = self.getData()
         df = database(self, wave)
         grouped = self.Bins(wave)
-        fig = self.plot(
+        self.plot(
             grouped,
             fname=f"wave_rose_24hr_{self.station}"
         )
-        return fig
 
 if __name__ == "__main__":
     station_codes = {
