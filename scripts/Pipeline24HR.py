@@ -3,6 +3,7 @@ logger = logging.getLogger(__name__)
 from cfg.loggingconfig import setup_logging
 from datetime import datetime, timedelta, timezone
 from scripts.WaveRosePlot import WavePlot
+from cfg.databaseconfig import database
 
 setup_logging()
 
@@ -13,8 +14,9 @@ class Pipeline24HR(WavePlot):
         self.sd = (now - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         logger.info(f"[24hr] Fetching {self.sd} - {self.ed}")
-        wind = self.getData()
-        grouped = self.Bins(wind)
+        wave = self.getData()
+        df = database(self, wave)
+        grouped = self.Bins(wave)
         fig = self.plot(
             grouped,
             fname=f"wave_rose_24hr_{self.station}"

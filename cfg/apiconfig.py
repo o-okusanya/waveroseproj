@@ -21,12 +21,11 @@ class WaveAPIConfig:
         for st in data["stations"]:
             for v in st["variable"]:
                 for m in v["measurements"]:
+                    dt = pd.to_datetime(m["time"], utc=True)
+                    epoch = int(dt.timestamp())
                     rows.append({
-                        "time": m["time"],
+                        "epoch": epoch,
                         "value": float(m["value"]),
                         "qa": m["QA"],
                     })
-        df = pd.DataFrame(rows)
-        df["time"] = pd.to_datetime(df["time"], format="ISO8601")
-        logger.debug(f"Fetched {len(df)} rows for {var}")
-        return df
+        return pd.DataFrame(rows)

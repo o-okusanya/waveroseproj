@@ -4,6 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 from cfg.apiconfig import WaveAPIConfig
 
+
 dir_bins = np.arange(0, 361, 45)
 dir_labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 hgt_bins = [0, 0.5, 1, 2, 4]
@@ -23,16 +24,20 @@ class Initializer(WaveAPIConfig):
         logger.info(f"Fetching data for station {self.station}")
         height = self.fetch_var("sea_surface_wave_significant_height")
         direction = self.fetch_var("sea_surface_wave_from_direction")
+        period = self.fetch_var("sea_surface_wind_wave_period")
 
-        height = height.rename(columns={"value": "wave_height"})
-        direction = direction.rename(columns={"value": "wave_dir"})
+        height = height.rename(columns={"value": "wave_height", "qa": "wave_height_qa"})
+        direction = direction.rename(columns={"value": "wave_dir", "qa": "wave_dir_qa"})
+        period = period.rename(columns={"value": "wave_period", "qa": "wave_period_qa"})
 
         logger.debug(f"Height shape: {height.shape}, Direction shape: {direction.shape}")
 
-        wave = (height.merge(direction, on="time")
-        )[["time", "wave_height", "wave_dir"]]
-        logger.debug(f"Merged wave shape: {wave.shape}")
-        return wave
+        df = pd.merge(height, direction, on="epoch", how="outer")
+        df = pd.merge(df, period, on="epoch", how="outer")
+
+        df = df.sort_values(by="epoch", ascending=True)
+        logger.debug(f"Merged wave shape: {df.shape}")
+        return df
 
     def Bins(self, wave):
         wave["dir_bin"] = pd.cut(

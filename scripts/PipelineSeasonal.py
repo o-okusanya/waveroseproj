@@ -2,8 +2,8 @@ import logging
 logger = logging.getLogger(__name__)
 from cfg.loggingconfig import setup_logging
 from scripts.WaveRosePlot import WavePlot
-from datetime import datetime, timedelta, timezone
 from cfg.seasonconfig import lastseason
+from cfg.databaseconfig import database
 
 setup_logging()
 
@@ -14,8 +14,9 @@ class PipelineSeasonal(WavePlot):
 
         logger.info(f"[season] {season.title()} {year} -- {self.sd} -> {self.ed}")
 
-        wind = self.getData()
-        grouped = self.Bins(wind)
+        wave = self.getData()
+        df = database(self, wave)
+        grouped = self.Bins(wave)
         self.plot(
             grouped,
             fname=f"wave_rose_{season}_{year}_{self.station}"
