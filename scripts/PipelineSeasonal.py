@@ -8,49 +8,40 @@ from cfg.databaseconfig import database
 setup_logging()
 
 class PipelineSeasonal(WavePlot):
-    def runseason(self):
+    def runseason(self, stations):
 
         season, year, sd, ed = lastseason()
 
-        logger.info(f"[season] {season.title()} {year} -- {self.sd} -> {self.ed}")
+        logger.info(f"[season] {season.title()} {year} -- {sd} -> {ed}")
 
-        wave = self.getData()
-        df = database(self, wave)
-        grouped = self.Bins(wave)
-        self.plot(
-            grouped,
-            fname=f"wave_rose_{season}_{year}_{self.station}"
-        )
+        results = {}
+        for station in stations:
+            logger.info(f"Running Seasonal for {station}")
+            self.setupParameters(
+                station=station,
+                sd=sd,
+                ed=ed,
+            )
+            try:
+                wave = self.getData()
+                if wave is None or wave.empty:
+                    logger.warning(f"No data for {station}, skipping")
+                    continue
+                database(self, wave)
+                results[station] = self.Bins(wave)
+            except Exception as e:
+                logger.error(f"Skipping {station}: {e}")
+        if not results:
+            logger.error("No stations returned data; nothing to plot")
+            return
+
+        display_title = f"Seasonal Wave Roses — {self.sd[:10]} to {self.ed[:10]}"
+        out_name = f"wave_rose_{season}_{year}_ALL"
+
+        fig = self.buildGrid(results, fname=display_title)
+        self.save(fig, fname=out_name)
 
 if __name__ == "__main__":
-    season, year, sd, ed = lastseason()
-    station_codes = {
-        "Annapolis":      "AN",
-        "Stingray Point": "SR",
-        "Potomac":        "PL",
-        "Upper Potomac":  "UP",
-        "Gooses Reef":    "GR",
-    }
-
-    print("Select a station:")
-    for name, code in station_codes.items():
-        print(f"  {name} ({code})")
-
-    user_input = input("Station code(s): ")
-    selected = [s.strip().upper() for s in user_input.split(",")]
-
-    for station in selected:
-        if station not in station_codes.values():
-            print(f"Station not found: {station}")
-            continue
-        logger.info(f"Running Seasonal for {station}")
-        pipeline = PipelineSeasonal()
-        pipeline.setupParameters(
-            station=station,
-            sd=sd,
-            ed=ed,
-        )
-        try:
-            pipeline.runseason()
-        except Exception as e:
-            logger.error(f"Skipping {station}: {e}")
+    stations = ['AN', 'SR', 'PL', 'UP', 'GR']
+    logger.info(f"Running Seasonal for {stations}")
+    PipelineSeasonal().runseason(stations)
