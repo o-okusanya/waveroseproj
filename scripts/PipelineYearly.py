@@ -42,7 +42,7 @@ class PipelineYear(WavePlot):
             return
 
         display_title = f"Yearly Wave Roses — {formatedyear}"
-        out_name = f"wave_rose_week_year{formatedyear}_ALL"
+        out_name = f"wave_rose_year{formatedyear}_ALL"
 
         fig = self.buildGrid(results, fname=display_title)
         self.save(fig, fname=out_name)
@@ -50,5 +50,5 @@ class PipelineYear(WavePlot):
 
 if __name__ == "__main__":
     stations = ['AN', 'SR', 'PL', 'UP', 'GR']
-    logger.info(f"Running Seasonal for {stations}")
+    logger.info(f"Running Yearly for {stations}")
     PipelineYear().runyear(stations)
