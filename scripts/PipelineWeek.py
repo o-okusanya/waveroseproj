@@ -36,8 +36,8 @@ class PipelineWeek(WavePlot):
             logger.error("No stations returned data; nothing to plot")
             return
 
-        display_title = f"Week Wind Roses — {self.sd} to {self.ed}"
-        out_name = f"wind_rose_week_24hr_ALL (Previous 7 Days)"
+        display_title = f"Week Wind Roses — {self.sd[:10]} to {self.ed[:10]}"
+        out_name = f"wind_rose_week_{self.sd[:10]}_{self.sd[:10]}"
 
         fig = self.buildGrid(results, fname=display_title)
         self.save(fig, fname=out_name)
