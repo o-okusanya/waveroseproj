@@ -41,7 +41,6 @@ class Pipeline24HR(WavePlot):
         self.save(fig, fname=out_name)
 
 if __name__ == "__main__":
-    if __name__ == "__main__":
-        stations = ['AN', 'SR', 'PL', 'UP', 'GR']
-        logger.info(f"Running Seasonal for {stations}")
-        Pipeline24HR().run24hr(stations)
+    stations = ['AN', 'SR', 'PL', 'UP', 'GR']
+    logger.info(f"Running Seasonal for {stations}")
+    Pipeline24HR().run24hr(stations)

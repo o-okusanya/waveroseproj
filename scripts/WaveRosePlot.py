@@ -20,8 +20,8 @@ Light cyan = small calm waves, dark navy = largest wave heights.<br><br>
 hgt_colors = dict(zip(hgt_labels, ["#E0F7FA", "#4DD0E1", "#0097A7", "#006064", "#002F35"]))
 station_names = {
     "AN": "Annapolis",
-    "SR": "Susquehanna River",
-    "PL": "Patapsco",
+    "SR": "Sting Ray",
+    "PL": "Point Lookout",
     "BH": "Baltimore Harbor",
     "GR": "Gooses Reef",
     "YS": "York Spit"

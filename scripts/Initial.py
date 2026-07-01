@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import logging
+import requests
+from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 from cfg.apiconfig import WaveAPIConfig
 
@@ -11,6 +13,22 @@ hgt_bins = [0, 0.5, 1, 2, 4]
 hgt_labels = ["0-.5", ".5-1", "1-2", "2-4"]
 
 class Initializer(WaveAPIConfig):
+    def generateChunks(self, sd, ed):
+        sd = sd
+        ed = ed
+        chunks = []
+        currentsd = sd
+        while currentsd <= ed:
+            currented = currentsd + timedelta(days=13)
+            if currented > ed:
+                currented = ed
+            chunks.append({
+                "start": currentsd.strftime("%Y-%m-%d"),
+                "end": currented.strftime("%Y-%m-%d"),
+            })
+            currentsd = currentsd + timedelta(days=14)
+        return chunks
+
     def setupParameters(self, station, sd, ed):
         self.base = "https://mw.buoybay.noaa.gov/api/v1"
         self.key = "f159959c117f473477edbdf3245cc2a4831ac61f"
@@ -22,22 +40,42 @@ class Initializer(WaveAPIConfig):
 
     def getData(self):
         logger.info(f"Fetching data for station {self.station}")
-        height = self.fetch_var("sea_surface_wave_significant_height")
-        direction = self.fetch_var("sea_surface_wave_from_direction")
-        period = self.fetch_var("sea_surface_wind_wave_period")
 
-        height = height.rename(columns={"value": "wave_height", "qa": "wave_height_qa"})
-        direction = direction.rename(columns={"value": "wave_dir", "qa": "wave_dir_qa"})
-        period = period.rename(columns={"value": "wave_period", "qa": "wave_period_qa"})
+        sd = datetime.strptime(self.sd, "%Y-%m-%dT%H:%M:%SZ")
+        ed = datetime.strptime(self.ed, "%Y-%m-%dT%H:%M:%SZ")
 
-        logger.debug(f"Height shape: {height.shape}, Direction shape: {direction.shape}")
+        chunks = self.generateChunks(sd, ed)
+        logger.info(f"Split into {len(chunks)} chunks")
 
-        df = pd.merge(height, direction, on="epoch", how="outer")
-        df = pd.merge(df, period, on="epoch", how="outer")
+        all_frames = []
+        for chunk in chunks:
+            logger.info(f"Fetching data for chunk {chunk}")
+            self.sd = f"{chunk['start']}T00:00:00Z"
+            self.ed = f"{chunk['end']}T00:00:00Z"
 
-        df = df.sort_values(by="epoch", ascending=True)
-        logger.debug(f"Merged wave shape: {df.shape}")
-        return df
+            height = self.fetch_var("sea_surface_wave_significant_height")
+            direction = self.fetch_var("sea_surface_wave_from_direction")
+            period = self.fetch_var("sea_surface_wind_wave_period")
+
+            height = height.rename(columns={"value": "wave_height", "qa": "wave_height_qa"})
+            direction = direction.rename(columns={"value": "wave_dir", "qa": "wave_dir_qa"})
+            period = period.rename(columns={"value": "wave_period", "qa": "wave_period_qa"})
+
+            logger.debug(f"Height shape: {height.shape}, Direction shape: {direction.shape}")
+
+            df = pd.merge(height, direction, on="epoch", how="outer")
+            df = pd.merge(df, period, on="epoch", how="outer")
+            all_frames.append(df)
+
+        self.sd = sd.strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.ed = ed.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        combined = pd.concat(all_frames, ignore_index=True)
+        combined = combined.drop_duplicates(subset="epoch", keep="last")
+        combined = combined.sort_values(by="epoch", ascending=True).reset_index(drop=True)
+        logger.debug(f"Combined wave shape: {df.shape}")
+
+        return combined
 
     def Bins(self, wave):
         wave["dir_bin"] = pd.cut(
